@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCC CPA Specification</title>
+<meta name="description" content="Step-by-step specification of a CPA (Compositional Perturbation Autoencoder) pipeline for the Virtual Cell Challenge 2025, with a biology glossary panel.">
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --panel: #f0f4ff;
+    --text: #1c2130;
+    --muted: #5b6475;
+    --line: #dde2ea;
+    --accent: #2f5fd6;
+    --accent-soft: #dfe8ff;
+    --warn-soft: #fff4d6;
+    --warn: #8a5a00;
+    --code-bg: #eef1f6;
+    --hl: #ffe9a8;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218; --surface: #171b24; --panel: #1a2030; --text: #e6e9ef; --muted: #9aa3b5;
+      --line: #2a3140; --accent: #7fa3ff; --accent-soft: #1f2c4d; --warn-soft: #3a2f10; --warn: #f0c26a;
+      --code-bg: #10141c; --hl: #4a3f14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1218; --surface: #171b24; --panel: #1a2030; --text: #e6e9ef; --muted: #9aa3b5;
+    --line: #2a3140; --accent: #7fa3ff; --accent-soft: #1f2c4d; --warn-soft: #3a2f10; --warn: #f0c26a;
+    --code-bg: #10141c; --hl: #4a3f14;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 28px 16px 20px; border-bottom: 1px solid var(--line); background: var(--surface);
+  }
+  header .inner { max-width: 1240px; margin: 0 auto; }
+  header h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  .layout {
+    max-width: 1240px; margin: 0 auto; padding: 24px 16px 64px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start;
+  }
+  main { min-width: 0; }
+  aside {
+    position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  }
+  aside h2 { margin: 0 0 4px; font-size: 16px; }
+  aside p.hint { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+  aside input {
+    width: 100%; padding: 8px 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font: inherit; font-size: 14px;
+  }
+  dl { margin: 0; }
+  dl > div { padding: 8px 10px; border-radius: 8px; margin-bottom: 4px; transition: background .25s; }
+  dl > div.active { background: var(--hl); }
+  dt { font-weight: 600; font-size: 14px; }
+  dd { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+  dd em { color: var(--text); font-style: normal; font-weight: 500; }
+  section {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 8px; font-size: 20px; }
+  section h2 .step { display: inline-block; min-width: 30px; padding: 1px 8px; margin-right: 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; text-align: center; }
+  section h3 { margin: 18px 0 6px; font-size: 16px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  a.term {
+    color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); cursor: pointer;
+  }
+  a.term:hover { background: var(--accent-soft); }
+  code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, "JetBrains Mono", monospace; font-size: 13.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 10px 0; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .callout { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 14.5px; }
+  .kv { color: var(--muted); font-size: 14px; }
+  figure { margin: 12px 0; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: 13.5px; margin-top: 6px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; margin-top: 10px; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; max-height: none; order: 2; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>Virtual Cell Challenge 2025 with a Compositional Perturbation Autoencoder</h1>
+    <p>Specification of the <code>vcc_cpa</code> project: what each step does, why, and the biology behind it. Blue dotted terms are explained in the panel on the right.</p>
+    <nav class="toc">
+      <a href="#s0">0 Problem</a><a href="#s1">1 Setup</a><a href="#s2">2 Data</a><a href="#s3">3 Preprocessing</a>
+      <a href="#s4">4 Gene features</a><a href="#s5">5 Model</a><a href="#s6">6 Training</a><a href="#s7">7 Prediction</a>
+      <a href="#s8">8 Evaluation</a><a href="#s9">9 Run it</a><a href="#s10">10 Limits &amp; next</a>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+<main>
+
+<section id="s0">
+  <h2><span class="step">0</span>The problem the challenge poses</h2>
+  <p>The Arc Institute's Virtual Cell Challenge asks for a model that predicts how a cell's <a class="term" data-term="transcriptome">transcriptome</a> changes after one gene is switched off. The data are a <a class="term" data-term="perturbseq">Perturb-seq</a> screen: <a class="term" data-term="h1">H1 human embryonic stem cells</a> receive a <a class="term" data-term="grna">guide RNA</a> that silences one <a class="term" data-term="target">target gene</a> by <a class="term" data-term="crispri">CRISPRi</a>, and each cell is then profiled with <a class="term" data-term="scrnaseq">single-cell RNA sequencing</a>.</p>
+  <table>
+    <tr><th>Given</th><td>Training cells (raw <a class="term" data-term="umi">UMI counts</a> over ~18k genes) labelled with their target gene or <a class="term" data-term="ntc">non-targeting control</a>, plus a list of <em>new</em> target genes and how many cells to produce for each.</td></tr>
+    <tr><th>Wanted</th><td>An <a class="term" data-term="h5ad">.h5ad</a> file with synthetic cells for every new target gene (and the control cells).</td></tr>
+    <tr><th>Scored by</th><td>Three metrics computed against real held-out cells: MAE, Perturbation Discrimination Score (PDS), Differential Expression Score (DES). See step 8.</td></tr>
+  </table>
+  <p>The hard part is that the scored target genes were <strong>never knocked down in training</strong>. A model must therefore reason from what it knows about the gene (its expression pattern, its protein) to what silencing it will do.</p>
+</section>
+
+<section id="s1">
+  <h2><span class="step">1</span>Environment</h2>
+  <p>Plain PyTorch plus the standard single-cell stack. No GPU is required for the demo.</p>
+<pre><code>uv venv .venv --python 3.13
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt</code></pre>
+  <p class="kv">Packages: numpy, scipy, pandas, scikit-learn, anndata, scanpy, h5py, torch, pytest.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="step">2</span>Data: the challenge format and a synthetic stand-in</h2>
+  <p>The real training file is several gigabytes, so the project ships a simulator that writes the <em>same files with the same schema</em>. Everything downstream works unchanged on the real data.</p>
+  <table>
+    <tr><th>File</th><th>Content</th></tr>
+    <tr><td><code>adata_Training.h5ad</code></td><td>cells × genes matrix of raw counts; <code>obs.target_gene</code> (gene symbol or <code>non-targeting</code>), <code>obs.batch</code></td></tr>
+    <tr><td><code>pert_counts_Validation.csv</code></td><td><code>target_gene, n_cells, median_umi_per_cell</code>: what to generate</td></tr>
+    <tr><td><code>gene_names.csv</code></td><td>the gene order every submission must follow</td></tr>
+    <tr><td><code>adata_Validation.h5ad</code></td><td>real cells for the held-out targets. Only the simulator produces this; it exists so you can score locally.</td></tr>
+  </table>
+  <h3>How the simulator encodes biology (<code>vcc_cpa/simulate.py</code>)</h3>
+  <ol>
+    <li>Genes are grouped into <a class="term" data-term="module">co-expression modules</a> with a sparse low-rank factor model. Each cell has a random position in factor space, which produces realistic cell-to-cell variation.</li>
+    <li>Knocking down a gene lowers its own expression by roughly 86 percent and shifts the modules it belongs to, so genes that co-vary with the target also respond. This is a stand-in for regulatory and pathway effects.</li>
+    <li>Two sequencing runs add a small gene-wise offset (a <a class="term" data-term="batch">batch effect</a>), and each cell has its own <a class="term" data-term="libsize">library size</a>.</li>
+    <li>Counts are sampled from a <a class="term" data-term="nb">negative binomial</a>, matching the overdispersion of droplet sequencing.</li>
+    <li>Perturbations, not cells, are split into train, validation and test, exactly like the challenge.</li>
+  </ol>
+</section>
+
+<section id="s3">
+  <h2><span class="step">3</span>Preprocessing (<code>vcc_cpa/data.py</code>)</h2>
+  <ol>
+    <li>Read the file, keep the matrix sparse, cast labels to strings.</li>
+    <li><a class="term" data-term="norm">Normalise</a> each cell to 10,000 counts and apply <code>log1p</code>. This removes library-size differences and compresses the heavy right tail of count data. The same transform is applied at prediction and evaluation time.</li>
+    <li>Encode <code>target_gene</code> as an integer with the control at index 0, and <code>batch</code> as an integer.</li>
+    <li>Iterate minibatches by slicing the sparse matrix, so only one minibatch is ever dense. This is what lets the real 200k-cell file train on a laptop.</li>
+  </ol>
+</section>
+
+<section id="s4">
+  <h2><span class="step">4</span>Gene features: how the model handles genes it never saw (<code>vcc_cpa/gene_features.py</code>)</h2>
+  <p>Vanilla CPA gives every perturbation a free, learned embedding. That is useless for a new gene. The project instead <em>computes</em> the perturbation embedding from a feature vector describing the gene:</p>
+  <p style="text-align:center"><code>PertEmb(gene) = MLP( feature(gene) )</code></p>
+  <ul>
+    <li><strong>Default, no download: PCA loadings.</strong> Run PCA on control cells and take each gene's loading on the top 50 components, standardised. Genes in the same co-expression module get similar vectors, and in the simulator, co-expression is exactly what determines the knockdown response. On real data this captures the gene's expression programme (cell-cycle, pluripotency, metabolism, and so on).</li>
+    <li><strong>Optional: an external table.</strong> Pass <code>--gene-features path.csv</code> with one row per gene, for example <a class="term" data-term="esm2">ESM2 protein embeddings</a> or Gene Ontology vectors. This is the route most challenge entries took.</li>
+  </ul>
+  <p>Genes missing from the table receive a zero vector and a warning; their prediction then collapses to the control state, which is the safest fallback.</p>
+</section>
+
+<section id="s5">
+  <h2><span class="step">5</span>The CPA model (<code>vcc_cpa/model.py</code>)</h2>
+  <p>CPA (Lotfollahi et al., <em>Mol Syst Biol</em> 2023) is an autoencoder whose <a class="term" data-term="latent">latent space</a> is <strong>additive</strong>: a cell's representation is the sum of a perturbation-free <a class="term" data-term="basal">basal state</a>, a perturbation term and covariate terms.</p>
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="CPA architecture diagram" font-family="system-ui, sans-serif" font-size="13">
+      <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor"/></marker></defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.4">
+        <rect x="10" y="95" width="110" height="46" rx="8" fill="var(--panel)"/>
+        <rect x="170" y="95" width="100" height="46" rx="8" fill="var(--panel)"/>
+        <rect x="320" y="95" width="90" height="46" rx="8" fill="var(--accent-soft)"/>
+        <rect x="470" y="95" width="100" height="46" rx="8" fill="var(--panel)"/>
+        <rect x="620" y="95" width="120" height="46" rx="8" fill="var(--panel)"/>
+        <rect x="320" y="10" width="130" height="40" rx="8" fill="var(--panel)"/>
+        <rect x="480" y="10" width="120" height="40" rx="8" fill="var(--panel)"/>
+        <rect x="200" y="190" width="120" height="40" rx="8" fill="var(--warn-soft)"/>
+        <rect x="340" y="190" width="120" height="40" rx="8" fill="var(--warn-soft)"/>
+        <g marker-end="url(#arr)">
+          <line x1="120" y1="118" x2="168" y2="118"/>
+          <line x1="270" y1="118" x2="318" y2="118"/>
+          <line x1="410" y1="118" x2="468" y2="118"/>
+          <line x1="570" y1="118" x2="618" y2="118"/>
+          <line x1="385" y1="50" x2="370" y2="93"/>
+          <line x1="540" y1="50" x2="380" y2="93"/>
+          <line x1="300" y1="141" x2="265" y2="188"/>
+          <line x1="345" y1="141" x2="395" y2="188"/>
+        </g>
+      </g>
+      <g fill="currentColor" text-anchor="middle">
+        <text x="65" y="113">cell x</text><text x="65" y="130" font-size="11" opacity=".7">log-norm expr.</text>
+        <text x="220" y="122">Encoder</text>
+        <text x="365" y="113">z_basal</text><text x="365" y="130" font-size="11" opacity=".7">+ shifts</text>
+        <text x="520" y="122">Decoder</text>
+        <text x="680" y="113">x̂</text><text x="680" y="130" font-size="11" opacity=".7">predicted expr.</text>
+        <text x="385" y="28">PertEmb</text><text x="385" y="43" font-size="11" opacity=".7">MLP(gene feature)</text>
+        <text x="540" y="28">BatchEmb</text><text x="540" y="43" font-size="11" opacity=".7">lookup table</text>
+        <text x="260" y="209">adversary</text><text x="260" y="223" font-size="11" opacity=".7">which perturbation?</text>
+        <text x="400" y="209">adversary</text><text x="400" y="223" font-size="11" opacity=".7">which batch?</text>
+      </g>
+    </svg>
+    <figcaption>z = z_basal + PertEmb(target) + BatchEmb(batch). The two adversaries (yellow) try to read the perturbation and batch from z_basal alone; the encoder is trained to defeat them.</figcaption>
+  </figure>
+  <table>
+    <tr><th>Block</th><th>Shape</th><th>Role</th></tr>
+    <tr><td>Encoder</td><td>genes → 256 → 256 → 64</td><td>Maps a cell to its basal latent vector.</td></tr>
+    <tr><td>PertEmb</td><td>feature dim → 128 → 64</td><td>Latent shift caused by knocking down the target. Zero for control cells.</td></tr>
+    <tr><td>BatchEmb</td><td>lookup, 64</td><td>Latent shift explained by the sequencing batch.</td></tr>
+    <tr><td>Decoder</td><td>64 → 256 → 256 → genes</td><td>Back to log-normalised expression. Trained with mean squared error.</td></tr>
+    <tr><td>Adversaries</td><td>64 → 128 → classes</td><td>Classifiers used only for <a class="term" data-term="disentangle">disentanglement</a>; discarded after training.</td></tr>
+  </table>
+  <p>Why additive? Because it makes the <a class="term" data-term="counterfactual">counterfactual</a> trivial: take a control cell's z_basal, add the embedding of a gene that was never seen, decode. The whole challenge submission is that one line.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="step">6</span>Training (<code>vcc_cpa/train.py</code>)</h2>
+  <ol>
+    <li><strong>Hold out unseen genes.</strong> 15 percent of training perturbations are removed entirely. They are the internal proxy for the challenge's hidden targets and drive checkpoint selection.</li>
+    <li><strong>Alternate two optimisers</strong> (the CPA recipe). Every third step updates the adversaries so they get better at reading perturbation and batch out of a frozen z_basal. The other steps update encoder, decoder and embeddings with
+      <code>loss = MSE(x̂, x) − λ · (CE_pert + CE_batch)</code>, which rewards a z_basal the adversaries <em>cannot</em> classify. λ defaults to 0.05; gradients are clipped for stability.</li>
+    <li><strong>After every epoch</strong>, predict each held-out perturbation from 500 random control cells and report the <a class="term" data-term="pseudobulk">pseudobulk</a> MAE and the Pearson correlation between predicted and true expression <em>deltas</em> (change relative to control). The checkpoint with the lowest held-out MAE is saved together with gene names, batch names and the gene-feature matrix, so prediction is self-contained.</li>
+  </ol>
+  <div class="callout">The reconstruction term alone would let z_basal memorise the perturbation, and the decoder would then ignore PertEmb. The adversarial term is what forces the perturbation effect into the embedding, where it can be transferred to new genes.</div>
+</section>
+
+<section id="s7">
+  <h2><span class="step">7</span>Prediction and submission (<code>vcc_cpa/predict.py</code>)</h2>
+  <ol>
+    <li>Load the checkpoint and the training file, keep only the <a class="term" data-term="ntc">non-targeting</a> cells: they are the biological "before" state.</li>
+    <li>For each row of <code>pert_counts_Validation.csv</code>, sample <code>n_cells</code> control cells (with replacement if needed), encode them, add <code>PertEmb(feature(target_gene))</code> and the cell's own batch embedding, decode. Because each control cell has its own z_basal, the pseudo-cells inherit realistic cell-to-cell variability.</li>
+    <li><strong>Residual trick (default).</strong> Instead of returning the decoded cell, return <code>x_control + [decode(z + shift) − decode(z)]</code>. The decoder's reconstruction error appears in both terms and cancels, so only the predicted <em>change</em> is applied to the real cell. <code>--no-residual</code> gives the original CPA behaviour; <code>--baseline</code> skips the model and relabels control cells, the "no change" reference every submission must beat.</li>
+    <li>Convert back to counts: <code>expm1(x̂) / 10,000 × median_umi_per_cell</code>, rounded and clipped at zero. The official <code>cell-eval prep</code> tool then re-normalises consistently.</li>
+    <li>Append real control cells (the submission must contain them) and write an <code>.h5ad</code> with <code>obs.target_gene</code> and the gene order of the model.</li>
+  </ol>
+<pre><code>cell-eval prep -i outputs/vcc/prediction.h5ad -g data/gene_names.csv   # packages the .vcc file to upload</code></pre>
+</section>
+
+<section id="s8">
+  <h2><span class="step">8</span>Evaluation (<code>vcc_cpa/evaluate.py</code>)</h2>
+  <p>Local re-implementations of the three challenge metrics, computed between the predicted file and real held-out cells. They are close to, but not literally, Arc's <code>cell-eval</code> code, so use them to compare your own runs, not to predict leaderboard numbers.</p>
+  <table>
+    <tr><th>Metric</th><th>How it is computed here</th><th>Reads as</th></tr>
+    <tr><td>MAE</td><td>Mean absolute difference between predicted and true pseudobulk (per-gene mean of log-normalised expression), averaged over perturbations.</td><td>lower is better</td></tr>
+    <tr><td>PDS</td><td>For each perturbation, L1 distance from its predicted pseudobulk to <em>every</em> true pseudobulk; rank of the correct one; score = 1 − rank/N.</td><td>1 = perfect, about 0.5 = random</td></tr>
+    <tr><td>DES</td><td><a class="term" data-term="de">Differential expression</a> vs control with a <a class="term" data-term="wilcoxon">Wilcoxon rank-sum test</a> and <a class="term" data-term="fdr">Benjamini–Hochberg</a> correction on both true and predicted cells; overlap of the true DE set with the top-k predicted DE genes (k = true set size), divided by k.</td><td>1 = perfect, 0 = no overlap</td></tr>
+    <tr><td>Pearson Δ</td><td>Correlation of predicted vs true expression change relative to control. Not a challenge metric, but the most intuitive diagnostic.</td><td>1 = perfect direction</td></tr>
+  </table>
+  <p>The script writes <code>scores.csv</code> (one row per perturbation, including how many DE genes each really has) and <code>scores.json</code> with the averages.</p>
+  <h3>Measured on the synthetic demo (12 unseen target genes, seed 0, 20 epochs)</h3>
+  <table>
+    <tr><th>Prediction</th><th>MAE ↓</th><th>PDS ↑</th><th>DES ↑</th><th>Pearson Δ ↑</th></tr>
+    <tr><td>CPA, residual (default)</td><td>0.177</td><td>0.944</td><td>0.510</td><td>0.590</td></tr>
+    <tr><td>CPA, decoded cells (<code>--no-residual</code>)</td><td>0.274</td><td>0.931</td><td>0.568</td><td>0.545</td></tr>
+    <tr><td>Control cells relabelled (<code>--baseline</code>)</td><td>0.215</td><td>0.521</td><td>0.000</td><td>−0.033</td></tr>
+  </table>
+  <div class="callout">MAE alone is a poor guide: "predict no change" scores well on it because most genes do not respond to any single knockdown. PDS and DES are the metrics that reward actually knowing what a knockdown does; the baseline collapses to random on PDS and to zero on DES. This is exactly why the challenge uses three metrics.</div>
+</section>
+
+<section id="s9">
+  <h2><span class="step">9</span>Run it</h2>
+<pre><code># one command, synthetic data, about a minute on CPU
+.venv\Scripts\python.exe -m vcc_cpa.pipeline
+
+# or step by step
+.venv\Scripts\python.exe -m vcc_cpa.simulate --out data
+.venv\Scripts\python.exe -m vcc_cpa.train    --data data/adata_Training.h5ad --out outputs/run1
+.venv\Scripts\python.exe -m vcc_cpa.predict  --model outputs/run1/model.pt --data data/adata_Training.h5ad \
+                                            --pert-counts data/pert_counts_Validation.csv --out outputs/run1/prediction.h5ad
+.venv\Scripts\python.exe -m vcc_cpa.evaluate --pred outputs/run1/prediction.h5ad --truth data/adata_Validation.h5ad \
+                                            --control data/adata_Training.h5ad
+.venv\Scripts\python.exe -m pytest -q          # end-to-end smoke test on a tiny screen
+
+# reference score: relabelled control cells ("no change"), then evaluate the same way
+.venv\Scripts\python.exe -m vcc_cpa.predict  --model outputs/run1/model.pt --data data/adata_Training.h5ad \
+                                            --pert-counts data/pert_counts_Validation.csv --out outputs/run1/baseline.h5ad --baseline</code></pre>
+  <p>Swap <code>data/</code> for the real challenge files and the same commands train and produce a submission. Use <code>--gene-features</code> to plug in ESM2 or other gene embeddings.</p>
+</section>
+
+<section id="s10">
+  <h2><span class="step">10</span>Known limitations and sensible next steps</h2>
+  <ul>
+    <li><strong>Gaussian output.</strong> The decoder minimises MSE on log-normalised values. The original CPA fits a Gaussian with learned variance, and count models (negative binomial) are more faithful to UMI data.</li>
+    <li><strong>Gene features decide everything.</strong> PCA loadings know nothing about a gene that is barely expressed in control cells. Protein-language-model embeddings (ESM2) or knowledge-graph features generalise better.</li>
+    <li><strong>Pseudo-cells are decoded controls.</strong> They cannot express variability that is specific to the perturbed state, which limits DES on perturbations with strong, heterogeneous effects.</li>
+    <li><strong>Small demo scale.</strong> Defaults (2,000 genes, 80 perturbations) are chosen to run in a minute; raise <code>--epochs</code>, <code>--latent</code> and <code>--hidden</code> for real data.</li>
+    <li><strong>Local metrics approximate cell-eval.</strong> Always run the official package before trusting a number.</li>
+  </ul>
+</section>
+
+</main>
+
+<aside id="glossary" aria-label="Biology glossary">
+  <h2>Biology panel</h2>
+  <p class="hint">Click a blue term in the text to jump here, or filter.</p>
+  <input type="search" id="filter" placeholder="filter terms…" aria-label="filter glossary">
+  <dl>
+    <div id="g-crispri"><dt>CRISPRi</dt><dd>CRISPR <em>interference</em>: a catalytically dead Cas9 fused to a repressor (KRAB) is parked on a gene's promoter and blocks transcription. The DNA is not cut, so the gene is turned down (knockdown), not deleted (knockout).</dd></div>
+    <div id="g-grna"><dt>guide RNA (sgRNA)</dt><dd>The short RNA that tells dCas9 which gene to sit on. One guide = one target gene; the guide's sequence is read out from the cell's RNA to label each cell with its perturbation.</dd></div>
+    <div id="g-h1"><dt>H1 hESC</dt><dd>A widely used human embryonic stem cell line. Pluripotent, so the same knockdown can also be studied in cells that later differentiate. The challenge data are all H1 cells.</dd></div>
+    <div id="g-perturbseq"><dt>Perturb-seq</dt><dd>Pooled CRISPR screen plus single-cell RNA-seq. Thousands of cells each carry one guide; sequencing recovers both the guide identity and the full transcriptome per cell.</dd></div>
+    <div id="g-transcriptome"><dt>Transcriptome</dt><dd>The set of all mRNA molecules in a cell and their abundances. Here: a vector of ~18,000 gene expression values per cell.</dd></div>
+    <div id="g-scrnaseq"><dt>scRNA-seq</dt><dd>Single-cell RNA sequencing. Cells are captured in droplets, their mRNAs barcoded per cell and sequenced, giving one expression profile per cell rather than an average over tissue.</dd></div>
+    <div id="g-umi"><dt>UMI count</dt><dd>Unique Molecular Identifier: a random tag on each captured mRNA molecule so PCR duplicates are counted once. The raw data matrix holds integer UMI counts per gene per cell.</dd></div>
+    <div id="g-target"><dt>Target gene / perturbation</dt><dd>The gene a guide silences. "Perturbation" is the generic term for any experimental treatment; in this challenge every perturbation is a single-gene CRISPRi knockdown.</dd></div>
+    <div id="g-ntc"><dt>Non-targeting control (NTC)</dt><dd>Cells that received a guide with no matching sequence in the genome. They experience the same handling but no knockdown, so they define the baseline every effect is measured against.</dd></div>
+    <div id="g-batch"><dt>Batch effect</dt><dd>Technical variation between experimental runs (different day, chip, reagent lot) that shifts expression for reasons unrelated to biology. The model gets an explicit batch embedding so this does not masquerade as a perturbation effect.</dd></div>
+    <div id="g-libsize"><dt>Library size</dt><dd>Total UMI counts in a cell. It varies several-fold between cells purely from capture efficiency, which is why counts are normalised per cell first.</dd></div>
+    <div id="g-norm"><dt>CP10k + log1p</dt><dd>Scale each cell so its counts sum to 10,000 (counts per 10k), then take log(1 + x). Standard single-cell normalisation; it makes values comparable across cells and roughly Gaussian.</dd></div>
+    <div id="g-nb"><dt>Negative binomial</dt><dd>The count distribution that fits UMI data: a Poisson whose rate itself varies between cells (overdispersion). Variance grows faster than the mean, unlike a plain Poisson.</dd></div>
+    <div id="g-module"><dt>Co-expression module</dt><dd>A group of genes whose expression rises and falls together across cells, usually because they sit in the same pathway or are controlled by the same transcription factors. Knocking down one member tends to move the whole module.</dd></div>
+    <div id="g-pseudobulk"><dt>Pseudobulk</dt><dd>Average expression profile of all cells sharing a label (e.g. one perturbation). Reduces single-cell noise; most challenge metrics compare pseudobulks.</dd></div>
+    <div id="g-de"><dt>Differential expression (DE)</dt><dd>Genes whose expression differs significantly between two groups, here perturbed vs control cells. The DE gene set is the biological "fingerprint" of a knockdown.</dd></div>
+    <div id="g-wilcoxon"><dt>Wilcoxon rank-sum test</dt><dd>Non-parametric test (also called Mann–Whitney U) asking whether values in one group tend to be larger than in another. Robust to the skewed, zero-heavy distributions of single-cell data.</dd></div>
+    <div id="g-fdr"><dt>Benjamini–Hochberg / FDR</dt><dd>Testing 18,000 genes at once produces many false positives by chance. BH adjustment controls the false discovery rate so that, say, at most 5 percent of the called DE genes are expected to be false.</dd></div>
+    <div id="g-latent"><dt>Latent space</dt><dd>The low-dimensional vector (64 numbers here) an autoencoder compresses a cell into. Distances in it reflect similarity of cell state.</dd></div>
+    <div id="g-basal"><dt>Basal state</dt><dd>CPA's term for the part of a cell's latent vector that remains after perturbation and batch effects are subtracted: the cell's intrinsic identity, cell-cycle phase, and so on.</dd></div>
+    <div id="g-disentangle"><dt>Disentanglement / adversary</dt><dd>Training trick that keeps perturbation information out of the basal state. A classifier tries to guess the perturbation from z_basal; the encoder is penalised whenever it succeeds, so perturbation effects are pushed into the separate perturbation embedding.</dd></div>
+    <div id="g-counterfactual"><dt>Counterfactual prediction</dt><dd>"What would this exact control cell look like if gene X were knocked down?" CPA answers by editing the latent vector and decoding, which is how unseen perturbations are predicted.</dd></div>
+    <div id="g-esm2"><dt>ESM2 embedding</dt><dd>A vector describing a protein, produced by a protein language model trained on millions of sequences. Genes with similar protein domains get similar vectors, giving the model a prior about genes never perturbed in training.</dd></div>
+    <div id="g-h5ad"><dt>AnnData / .h5ad</dt><dd>The standard Python container for single-cell data: a cells × genes matrix (<code>X</code>), per-cell metadata (<code>obs</code>) and per-gene metadata (<code>var</code>), saved as HDF5.</dd></div>
+  </dl>
+</aside>
+</div>
+
+<script>
+(function () {
+  var active = null;
+  document.querySelectorAll('a.term').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var el = document.getElementById('g-' + a.dataset.term);
+      if (!el) return;
+      if (active) active.classList.remove('active');
+      active = el; el.classList.add('active');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+  var filter = document.getElementById('filter');
+  filter.addEventListener('input', function () {
+    var q = filter.value.trim().toLowerCase();
+    document.querySelectorAll('#glossary dl > div').forEach(function (d) {
+      d.style.display = (!q || d.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+    });
+  });
+})();
+</script>
+</body>
+</html>
