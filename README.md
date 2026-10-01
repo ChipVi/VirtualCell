@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Virtual Cell Challenge 2025 — CPA baseline
 
 A small, dependency-light PyTorch implementation of a **Compositional Perturbation
@@ -78,3 +79,6 @@ differentially expressed genes (DES 0). The default prediction adds the model's 
 | `vcc_cpa/predict.py` | counterfactual pseudo-cells → `.h5ad` submission |
 | `vcc_cpa/evaluate.py` | local MAE / PDS / DES |
 | `tests/test_pipeline.py` | end-to-end smoke test |
+=======
+# VirtualCell
+>>>>>>> 77f9c3b4ab3d583aba0980064c2815c5d4e47e13
